@@ -1,4 +1,5 @@
 import { useState } from "react"
+import dayjs from "dayjs"
 import {
   ChevronRightIcon,
   CheckIcon,
@@ -8,6 +9,7 @@ import {
   TrashIcon,
   ArrowUturnUpIcon,
 } from "@heroicons/react/24/solid"
+import { ClockIcon } from "@heroicons/react/24/outline"
 import type { TaskActions } from "../hooks/useTasks"
 import type { TaskArray } from "../types/task"
 
@@ -29,10 +31,15 @@ function TaskComponent({
   parenting,
   ...tasksFunctions
 }: TaskProps) {
-  const { completeTask, removeTask, reorderTask, isTaskCompleted } =
-    tasksFunctions
+  const {
+    completeTask,
+    removeTask,
+    reorderTask,
+    isTaskCompleted,
+    getTaskCompletedAt,
+  } = tasksFunctions
   const [expand, setExpand] = useState(false)
-  const { subTasks = [], name = "" } = allTasks?.[uuid] ?? {}
+  const { subTasks = [], name = "", createdAt } = allTasks?.[uuid] ?? {}
 
   const isEditing = editing === uuid
   const isParent = parenting === uuid
@@ -58,22 +65,22 @@ function TaskComponent({
           </button>
         </div>
 
-        <div>
-          <button
-            disabled={hasSubTasks}
-            className={[
-              "w-3 h-3 border rounded-full p-0",
-              hasSubTasks ? "border-tiffanyblue" : "border-hotpink",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-            onClick={() =>
-              !hasSubTasks && completeTask(uuid, !isTaskCompleted(uuid))
-            }
-          >
-            {isTaskCompleted(uuid) && <CheckIcon className="w-3 h-3" />}
-          </button>
-        </div>
+        <button
+          disabled={hasSubTasks}
+          className={[
+            "w-4 h-4 border rounded-full p-0 relative",
+            hasSubTasks ? "border-tiffanyblue" : "border-hotpink",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          onClick={() =>
+            !hasSubTasks && completeTask(uuid, !isTaskCompleted(uuid))
+          }
+        >
+          {isTaskCompleted(uuid) && (
+            <CheckIcon className="w-4 h-4 absolute inset-0" />
+          )}
+        </button>
 
         <div className="flex-1 flex gap-2 items-center font-normal">
           <div
@@ -82,6 +89,19 @@ function TaskComponent({
           >
             {name}
           </div>
+
+          <ClockIcon
+            className="h-4 w-4 cursor-pointer"
+            title={[
+              `Créé le ${dayjs(createdAt).format("MM/DD/YY [à] HH:mm:ss")}`,
+              isTaskCompleted(uuid) &&
+                `complété le ${dayjs(getTaskCompletedAt(uuid)).format(
+                  "MM/DD/YY [à] HH:mm:ss"
+                )}`,
+            ]
+              .filter(Boolean)
+              .join(", ")}
+          />
 
           <button
             className="p-0"

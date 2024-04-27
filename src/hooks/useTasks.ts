@@ -42,6 +42,7 @@ export const DEFAULT_TASK_LIST: TaskList = {
 export interface TaskActions {
   createTask(name: string, parent?: string): void
   completeTask(uuid: string, done?: boolean): void
+  getTaskCompletedAt(uuid: string): number | undefined
   isTaskCompleted(uuid: string): boolean
   removeTask(uuid: string): void
   reorderTask(uuid: string, indexChange: number): void
@@ -140,6 +141,28 @@ export const useTasks = (): [TaskList, TaskActions, TaskArray] => {
     return true
   }
 
+  function getTaskCompletedAt(uuid: string): number | undefined {
+    const task = allTasks[uuid]
+    if (task && isTaskCompleted(uuid)) {
+      if (task?.subTasks?.length) {
+        let latestCompleted: number | undefined = undefined
+        task.subTasks.forEach((subTaskUuid) => {
+          const subTask = allTasks[subTaskUuid]
+          if (
+            subTask?.completedAt &&
+            (!latestCompleted || latestCompleted < subTask?.completedAt)
+          ) {
+            latestCompleted = subTask?.completedAt
+          }
+        })
+        return latestCompleted
+      } else {
+        return task.completedAt
+      }
+    }
+    return undefined
+  }
+
   function removeTaskInParent(uuid: string, parentUuid: string): void {
     const parent = allTasks[parentUuid]
 
@@ -225,12 +248,13 @@ export const useTasks = (): [TaskList, TaskActions, TaskArray] => {
   return [
     taskList,
     {
-      createTask,
       completeTask,
+      createTask,
+      getTaskCompletedAt,
+      isTaskCompleted,
       removeTask,
       reorderTask,
       updateTask,
-      isTaskCompleted,
     },
     allTasks,
   ]
