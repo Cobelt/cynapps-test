@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid"
 const UUID_1 = uuidv4()
 const UUID_2 = uuidv4()
 const UUID_3 = uuidv4()
+const UUID_4 = uuidv4()
 const NOW = Date.now()
 
 const DEFAULT_TASKS = {
@@ -26,6 +27,12 @@ const DEFAULT_TASKS = {
     done: false,
     name: "Manger !",
   },
+  [UUID_4]: {
+    uuid: UUID_4,
+    createdAt: NOW,
+    done: false,
+    name: "Quatro !",
+  },
 }
 export const DEFAULT_TASK_LIST: TaskList = {
   name: "To do Today",
@@ -37,14 +44,13 @@ export interface TaskActions {
   createTask(name: string, parent: string): void
   completeTask: (uuid: string, done?: boolean) => void
   removeTask: (uuid: string) => void
+  reorderTask: (uuid: string, indexChange: number) => void
   populateTasks(uuids: string[]): Task[]
 }
 
 export const useTasks = (): [TaskList, TaskActions, TaskArray] => {
   const [taskList, setTaskList] = useState<TaskList>(DEFAULT_TASK_LIST)
   const [allTasks, setAllTasks] = useState<TaskArray>(DEFAULT_TASKS)
-
-  console.log({ allTasks })
 
   function createTask(name: string, parent: string): void {
     const newTask: Task = {
@@ -110,13 +116,66 @@ export const useTasks = (): [TaskList, TaskActions, TaskArray] => {
     })
   }
 
+  function addAtIndex(tasks: string[], uuid: string, index: number): string[] {
+    const subTasksPart1 = tasks.slice(0, index)
+    const subTasksPart2 = tasks.slice(index)
+
+    return [subTasksPart1, uuid, subTasksPart2].flat()
+  }
+
+  function reorderTask(uuid: string, indexChange: number): void {
+    const toReorder = allTasks[uuid]
+    if (toReorder?.parent) {
+      const parent = allTasks[toReorder.parent]
+      if (parent) {
+        const currentIndex =
+          parent?.subTasks?.findIndex((taskUuid) => taskUuid === uuid) ?? 0
+        const newIndex = currentIndex + indexChange
+
+        if (parent?.subTasks?.length) {
+          const newSubTasks = addAtIndex(
+            parent?.subTasks?.filter?.((taskUuid) => taskUuid !== uuid),
+            uuid,
+            newIndex
+          )
+
+          updateTask(toReorder.parent, {
+            ...parent,
+            subTasks: newSubTasks,
+          })
+        } else {
+          // could be refactored ?
+          updateTask(toReorder.parent, {
+            ...parent,
+            subTasks: [uuid],
+          })
+        }
+      }
+    } else {
+      const currentIndex =
+        taskList?.tasks?.findIndex((taskUuid) => taskUuid === uuid) ?? 0
+      const newIndex = currentIndex + indexChange
+
+      const newTasks = addAtIndex(
+        taskList?.tasks?.filter?.((taskUuid) => taskUuid !== uuid),
+        uuid,
+        newIndex
+      )
+
+      setTaskList((list) => ({
+        ...list,
+        tasks: newTasks,
+      }))
+    }
+  }
+
   function populateTasks(uuids: string[]): Task[] {
     return uuids.map((uuid) => allTasks[uuid])
   }
 
   return [
     taskList,
-    { createTask, completeTask, removeTask, populateTasks },
+    { createTask, completeTask, removeTask, reorderTask, populateTasks },
     allTasks,
   ]
 }

@@ -16,7 +16,8 @@ interface TaskProps extends TaskActions {
 }
 
 function TaskComponent({ uuid, allTasks, ...tasksFunctions }: TaskProps) {
-  const { populateTasks, completeTask, removeTask } = tasksFunctions
+  const { populateTasks, completeTask, removeTask, reorderTask } =
+    tasksFunctions
   const [expand, setExpand] = useState(false)
   const [editing, setEditing] = useState(false)
   const [{ subTasks = [], done = false, name = "" } = {}] = populateTasks([
@@ -35,14 +36,14 @@ function TaskComponent({ uuid, allTasks, ...tasksFunctions }: TaskProps) {
           <button
             className="p-0"
             type="button"
-            onClick={() => console.log("reorder higher")}
+            onClick={() => reorderTask(uuid, -1)}
           >
             <ChevronUpIcon className="h-4 w-4 transition-transform" />
           </button>
           <button
             className="p-0"
             type="button"
-            onClick={() => console.log("reorder lower")}
+            onClick={() => reorderTask(uuid, 1)}
           >
             <ChevronDownIcon className="h-4 w-4 transition-transform" />
           </button>
@@ -101,17 +102,14 @@ function TaskComponent({ uuid, allTasks, ...tasksFunctions }: TaskProps) {
       {expand && !!subTasks?.length && (
         <div className="flex flex-col gap-4">
           <div className="flex pl-5">
-            {subTasks?.map?.((uuid) => {
-              console.log("subTask:", { uuid })
-              return (
-                <TaskComponent
-                  key={uuid}
-                  uuid={uuid}
-                  allTasks={allTasks}
-                  {...tasksFunctions}
-                />
-              )
-            })}
+            {subTasks?.map?.((uuid) => (
+              <TaskComponent
+                key={uuid}
+                uuid={uuid}
+                allTasks={allTasks}
+                {...tasksFunctions}
+              />
+            ))}
           </div>
         </div>
       )}
