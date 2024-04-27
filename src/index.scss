@@ -3,14 +3,14 @@
 @tailwind utilities;
 
 :root {
-  --light: #fff9ef;
+  --light: #fffcf7;
   --grey: rgb(208, 208, 212);
   --white: rgba(255, 255, 255, 0.87);
   --darkerpink: #441b21;
   --darkpink: #955a63;
   --pastelpink: #ffd5dc;
   --hotpink: #FFAEBC;
-  --tiffanyblue: #A0E7E5;
+  --tiffanyblue: #b5c3c2;
   --mint: #B4F8C8;
   --cream: #FBE7C6;
 
@@ -104,4 +104,8 @@ button {
   background-color: transparent;
   cursor: pointer;
   transition: border-color 0.25s;
+}
+
+input {
+  outline: unset;
 }

@@ -39,20 +39,19 @@ export const DEFAULT_TASK_LIST: TaskList = {
   tasks: Object.keys(DEFAULT_TASKS),
 }
 
-// type TaskListPopulated = Omit<TaskList, "tasks"> & { tasks: Task[] }
 export interface TaskActions {
-  createTask(name: string, parent: string): void
-  completeTask: (uuid: string, done?: boolean) => void
-  removeTask: (uuid: string) => void
-  reorderTask: (uuid: string, indexChange: number) => void
-  populateTasks(uuids: string[]): Task[]
+  createTask(name: string, parent?: string): void
+  completeTask(uuid: string, done?: boolean): void
+  removeTask(uuid: string): void
+  reorderTask(uuid: string, indexChange: number): void
+  updateTask(uuid: string, newValue: Task): void
 }
 
 export const useTasks = (): [TaskList, TaskActions, TaskArray] => {
   const [taskList, setTaskList] = useState<TaskList>(DEFAULT_TASK_LIST)
   const [allTasks, setAllTasks] = useState<TaskArray>(DEFAULT_TASKS)
 
-  function createTask(name: string, parent: string): void {
+  function createTask(name: string, parent?: string): void {
     const newTask: Task = {
       uuid: uuidv4(),
       createdAt: Date.now(),
@@ -82,26 +81,67 @@ export const useTasks = (): [TaskList, TaskActions, TaskArray] => {
   }
 
   function updateTask(toUpdate: string, newValue: Task) {
-    if (toUpdate && allTasks[toUpdate]) {
-      setAllTasks((tasks) => ({ ...tasks, [toUpdate]: newValue }))
+    if (toUpdate) {
+      const toUpdateTask = allTasks[toUpdate]
+      if (toUpdateTask) {
+        setAllTasks((tasks) => ({ ...tasks, [toUpdate]: newValue }))
+
+        if (toUpdateTask?.parent !== newValue?.parent) {
+          if (toUpdateTask?.parent) {
+            removeTaskInParent(toUpdate, toUpdateTask?.parent)
+          } else {
+            setTaskList((list) => ({
+              ...list,
+              tasks: list.tasks.filter((taskUuid) => taskUuid !== toUpdate),
+            }))
+          }
+
+          if (newValue?.parent) {
+            const parent = allTasks[newValue?.parent]
+            if (parent) {
+              const newSubTasks = addAtIndex(
+                parent?.subTasks ?? [],
+                toUpdate,
+                parent?.subTasks?.length ?? 0
+              )
+              updateTask(newValue?.parent, {
+                ...parent,
+                subTasks: newSubTasks,
+              })
+            }
+          }
+        }
+      }
     }
   }
 
   function completeTask(uuid: string, done?: boolean): void {
-    updateTask(uuid, { ...allTasks[uuid], done: done ?? true })
+    const task = allTasks[uuid]
+    if (task) {
+      const isCompleted = done ?? true
+      updateTask(uuid, {
+        ...task,
+        done: isCompleted,
+        completedAt: isCompleted ? Date.now() : task.completedAt,
+      })
+    }
+  }
+
+  function removeTaskInParent(uuid: string, parentUuid: string): void {
+    const parent = allTasks[parentUuid]
+
+    updateTask(parentUuid, {
+      ...parent,
+      subTasks:
+        parent?.subTasks?.filter?.((taskUuid) => taskUuid !== uuid) ?? [],
+    })
   }
 
   function removeTask(uuid: string): void {
     const toRemove = allTasks[uuid]
 
     if (toRemove?.parent) {
-      const parent = allTasks[toRemove.parent]
-
-      updateTask(toRemove.parent, {
-        ...parent,
-        subTasks:
-          parent?.subTasks?.filter?.((taskUuid) => taskUuid !== uuid) ?? [],
-      })
+      removeTaskInParent(uuid, toRemove.parent)
     } else {
       setTaskList((list) => ({
         ...list,
@@ -169,13 +209,15 @@ export const useTasks = (): [TaskList, TaskActions, TaskArray] => {
     }
   }
 
-  function populateTasks(uuids: string[]): Task[] {
-    return uuids.map((uuid) => allTasks[uuid])
-  }
-
   return [
     taskList,
-    { createTask, completeTask, removeTask, reorderTask, populateTasks },
+    {
+      createTask,
+      completeTask,
+      removeTask,
+      reorderTask,
+      updateTask,
+    },
     allTasks,
   ]
 }

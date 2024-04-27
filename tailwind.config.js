@@ -6,12 +6,12 @@ export default {
   ],
   theme: {
     colors: {
-      light: "#fff9ef",
+      light: "#fffcf7",
       pastelpink: "#ffd5dc",
       hotpink: "#FFAEBC",
       darkpink: "#955a63",
       darkerpink: "#441b21",
-      tiffanyblue: "#A0E7E5",
+      tiffanyblue: "#b5c3c2",
       mint: "#B4F8C8",
       cream: "#FBE7C6",
     },

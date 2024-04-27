@@ -1,4 +1,4 @@
-import { MouseEvent, useState } from "react"
+import { useState } from "react"
 import {
   ChevronRightIcon,
   CheckIcon,
@@ -6,6 +6,7 @@ import {
   ChevronDownIcon,
   PencilIcon,
   TrashIcon,
+  ArrowUturnUpIcon,
 } from "@heroicons/react/24/solid"
 import type { TaskActions } from "../hooks/useTasks"
 import type { TaskArray } from "../types/task"
@@ -13,24 +14,30 @@ import type { TaskArray } from "../types/task"
 interface TaskProps extends TaskActions {
   uuid: string
   allTasks: TaskArray // for refresh when updates
+  setParenting(parent?: string): void
+  setEditing(uuid?: string): void
+  editing?: string
+  parenting?: string
 }
 
-function TaskComponent({ uuid, allTasks, ...tasksFunctions }: TaskProps) {
-  const { populateTasks, completeTask, removeTask, reorderTask } =
-    tasksFunctions
+function TaskComponent({
+  uuid,
+  allTasks,
+  setParenting,
+  setEditing,
+  editing,
+  parenting,
+  ...tasksFunctions
+}: TaskProps) {
+  const { completeTask, removeTask, reorderTask } = tasksFunctions
   const [expand, setExpand] = useState(false)
-  const [editing, setEditing] = useState(false)
-  const [{ subTasks = [], done = false, name = "" } = {}] = populateTasks([
-    uuid,
-  ])
+  const { subTasks = [], done = false, name = "" } = allTasks?.[uuid] ?? {}
 
-  function startEdit(e: MouseEvent<HTMLButtonElement>) {
-    e.stopPropagation()
-    setEditing(!editing)
-  }
+  const isEditing = editing === uuid
+  const isParent = parenting === uuid
 
   return (
-    <div>
+    <div className="flex-1">
       <div className="flex gap-2 items-center">
         <div className="flex flex-col">
           <button
@@ -66,12 +73,27 @@ function TaskComponent({ uuid, allTasks, ...tasksFunctions }: TaskProps) {
             {name}
           </div>
 
-          <button className="p-0" onClick={startEdit}>
-            <PencilIcon
+          <button
+            className="p-0"
+            disabled={isEditing}
+            onClick={() => setParenting(isParent ? undefined : uuid)}
+          >
+            <ArrowUturnUpIcon
               className={[
-                "h-4 w-4 transition-transform",
-                editing && "text-hotpink",
+                "h-4 w-4 rotate-90",
+                isParent && !isEditing && "text-hotpink",
+                isEditing && "text-tiffanyblue",
               ]
+                .filter(Boolean)
+                .join(" ")}
+            />
+          </button>
+          <button
+            className="p-0"
+            onClick={() => setEditing(isEditing ? undefined : uuid)}
+          >
+            <PencilIcon
+              className={["h-4 w-4", isEditing && "text-hotpink"]
                 .filter(Boolean)
                 .join(" ")}
             />
@@ -100,17 +122,19 @@ function TaskComponent({ uuid, allTasks, ...tasksFunctions }: TaskProps) {
         </div>
       </div>
       {expand && !!subTasks?.length && (
-        <div className="flex flex-col gap-4">
-          <div className="flex pl-5">
-            {subTasks?.map?.((uuid) => (
-              <TaskComponent
-                key={uuid}
-                uuid={uuid}
-                allTasks={allTasks}
-                {...tasksFunctions}
-              />
-            ))}
-          </div>
+        <div className="flex flex-col gap-2 pl-5 pt-2">
+          {subTasks?.map?.((uuid) => (
+            <TaskComponent
+              key={uuid}
+              uuid={uuid}
+              allTasks={allTasks}
+              setParenting={setParenting}
+              setEditing={setEditing}
+              parenting={parenting}
+              editing={editing}
+              {...tasksFunctions}
+            />
+          ))}
         </div>
       )}
     </div>
