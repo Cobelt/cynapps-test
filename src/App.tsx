@@ -1,9 +1,9 @@
 import "./App.scss"
+import TaskComponent from "./components/Task"
 import { useTasks } from "./hooks/useTasks"
-import { CheckIcon } from "@heroicons/react/24/solid"
 
 function App() {
-  const [taskList] = useTasks()
+  const [taskList, taskFunctions, allTasks] = useTasks()
   const { name, tasks } = taskList ?? {}
 
   return (
@@ -12,19 +12,13 @@ function App() {
 
       <div className="flex flex-col gap-4">
         {!!tasks?.length &&
-          tasks?.map?.((task) => (
-            <div className="flex gap-2">
-              <div>
-                <button
-                  className="w-5 h-5 border border-hotpink rounded-full p-0"
-                  onClick={() => console.log("should put to done")}
-                >
-                  {task?.done && <CheckIcon className="w-5 h-5" />}
-                </button>
-              </div>
-
-              <div>{task?.name}</div>
-            </div>
+          tasks?.map?.((uuid) => (
+            <TaskComponent
+              key={uuid}
+              uuid={uuid}
+              allTasks={allTasks}
+              {...taskFunctions}
+            />
           ))}
       </div>
     </div>
