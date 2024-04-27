@@ -1,14 +1,18 @@
 export interface Task {
+  uuid: string
   name: string
   done: boolean
   createdAt: number
-  updatedAt: number
   completedAt?: number
-  subTasks?: Task[]
-  parent?: Task
+  subTasks?: string[]
+  parent?: string
 }
 
 export interface TaskList {
   name: string
-  tasks: Task[]
+  tasks: string[]
+}
+
+export interface TaskArray {
+  [uuid: string]: Task
 }
