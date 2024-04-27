@@ -19,7 +19,7 @@ A todo list app with offline possibility
 1. Clone the repo
 
 ```bash
-git clone https://github.com/cobelt/test-cynapps.git
+git clone https://github.com/cobelt/cynapps-test.git
 ```
 
 2. Install dependencies
