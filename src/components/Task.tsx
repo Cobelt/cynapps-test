@@ -29,12 +29,14 @@ function TaskComponent({
   parenting,
   ...tasksFunctions
 }: TaskProps) {
-  const { completeTask, removeTask, reorderTask } = tasksFunctions
+  const { completeTask, removeTask, reorderTask, isTaskCompleted } =
+    tasksFunctions
   const [expand, setExpand] = useState(false)
-  const { subTasks = [], done = false, name = "" } = allTasks?.[uuid] ?? {}
+  const { subTasks = [], name = "" } = allTasks?.[uuid] ?? {}
 
   const isEditing = editing === uuid
   const isParent = parenting === uuid
+  const hasSubTasks = !!subTasks?.length
 
   return (
     <div className="flex-1">
@@ -58,10 +60,18 @@ function TaskComponent({
 
         <div>
           <button
-            className="w-3 h-3 border border-hotpink rounded-full p-0"
-            onClick={() => completeTask(uuid, !done)}
+            disabled={hasSubTasks}
+            className={[
+              "w-3 h-3 border rounded-full p-0",
+              hasSubTasks ? "border-tiffanyblue" : "border-hotpink",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            onClick={() =>
+              !hasSubTasks && completeTask(uuid, !isTaskCompleted(uuid))
+            }
           >
-            {done && <CheckIcon className="w-3 h-3" />}
+            {isTaskCompleted(uuid) && <CheckIcon className="w-3 h-3" />}
           </button>
         </div>
 
@@ -107,7 +117,7 @@ function TaskComponent({
             <TrashIcon className="h-4 w-4 transition-transform" />
           </button>
 
-          {!!subTasks?.length && (
+          {hasSubTasks && (
             <div className="cursor-pointer" onClick={() => setExpand(!expand)}>
               <ChevronRightIcon
                 className={[
@@ -121,7 +131,7 @@ function TaskComponent({
           )}
         </div>
       </div>
-      {expand && !!subTasks?.length && (
+      {expand && hasSubTasks && (
         <div className="flex flex-col gap-2 pl-5 pt-2">
           {subTasks?.map?.((uuid) => (
             <TaskComponent

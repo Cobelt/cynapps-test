@@ -42,6 +42,7 @@ export const DEFAULT_TASK_LIST: TaskList = {
 export interface TaskActions {
   createTask(name: string, parent?: string): void
   completeTask(uuid: string, done?: boolean): void
+  isTaskCompleted(uuid: string): boolean
   removeTask(uuid: string): void
   reorderTask(uuid: string, indexChange: number): void
   updateTask(uuid: string, newValue: Task): void
@@ -125,6 +126,18 @@ export const useTasks = (): [TaskList, TaskActions, TaskArray] => {
         completedAt: isCompleted ? Date.now() : task.completedAt,
       })
     }
+  }
+
+  function isTaskCompleted(uuid: string): boolean {
+    const task = allTasks[uuid]
+    if (task) {
+      if (task?.subTasks?.length) {
+        return task.subTasks.every((subTask) => isTaskCompleted(subTask))
+      } else {
+        return task.done
+      }
+    }
+    return true
   }
 
   function removeTaskInParent(uuid: string, parentUuid: string): void {
@@ -217,6 +230,7 @@ export const useTasks = (): [TaskList, TaskActions, TaskArray] => {
       removeTask,
       reorderTask,
       updateTask,
+      isTaskCompleted,
     },
     allTasks,
   ]
