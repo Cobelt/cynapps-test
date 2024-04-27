@@ -1,11 +1,10 @@
 # To Do List
 
-A todo list app with offline possibility
+A todo list app
 
 ## Features
 
 - Todo
-- offline usage
 
 ## Tech Stack
 
