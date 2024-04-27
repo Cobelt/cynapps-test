@@ -42,16 +42,39 @@ export const DEFAULT_TASK_LIST: TaskList = {
 export interface TaskActions {
   createTask(name: string, parent?: string): void
   completeTask(uuid: string, done?: boolean): void
+  downloadJSON(): void
   getTaskCompletedAt(uuid: string): number | undefined
   isTaskCompleted(uuid: string): boolean
   removeTask(uuid: string): void
   reorderTask(uuid: string, indexChange: number): void
   updateTask(uuid: string, newValue: Task): void
+  uploadJSON(json?: string | ArrayBuffer | null): void
 }
 
 export const useTasks = (): [TaskList, TaskActions, TaskArray] => {
   const [taskList, setTaskList] = useState<TaskList>(DEFAULT_TASK_LIST)
   const [allTasks, setAllTasks] = useState<TaskArray>(DEFAULT_TASKS)
+
+  function _createTask(newTask: Task) {
+    setAllTasks((tasks) => {
+      return { ...(tasks ?? []), [newTask?.uuid]: newTask }
+    })
+
+    if (newTask?.parent) {
+      const parentTask = allTasks[newTask.parent]
+
+      if (parentTask) {
+        updateTask(newTask.parent, {
+          ...parentTask,
+          subTasks: [...(parentTask?.subTasks ?? []), newTask.uuid],
+        })
+      }
+    } else {
+      setTaskList((taskList) => {
+        return { ...taskList, tasks: [...taskList.tasks, newTask?.uuid] }
+      })
+    }
+  }
 
   function createTask(name: string, parent?: string): void {
     const newTask: Task = {
@@ -62,24 +85,7 @@ export const useTasks = (): [TaskList, TaskActions, TaskArray] => {
       parent,
     }
 
-    setAllTasks((tasks) => {
-      return { ...(tasks ?? []), [newTask?.uuid]: newTask }
-    })
-
-    if (parent) {
-      const parentTask = allTasks[parent]
-
-      if (parentTask) {
-        updateTask(parent, {
-          ...parentTask,
-          subTasks: [...(parentTask?.subTasks ?? []), newTask.uuid],
-        })
-      }
-    } else {
-      setTaskList((taskList) => {
-        return { ...taskList, tasks: [...taskList.tasks, newTask?.uuid] }
-      })
-    }
+    _createTask(newTask)
   }
 
   function updateTask(toUpdate: string, newValue: Task) {
@@ -168,8 +174,7 @@ export const useTasks = (): [TaskList, TaskActions, TaskArray] => {
 
     updateTask(parentUuid, {
       ...parent,
-      subTasks:
-        parent?.subTasks?.filter?.((taskUuid) => taskUuid !== uuid) ?? [],
+      subTasks: parent?.subTasks?.filter((taskUuid) => taskUuid !== uuid) ?? [],
     })
   }
 
@@ -210,7 +215,7 @@ export const useTasks = (): [TaskList, TaskActions, TaskArray] => {
 
         if (parent?.subTasks?.length) {
           const newSubTasks = addAtIndex(
-            parent?.subTasks?.filter?.((taskUuid) => taskUuid !== uuid),
+            parent?.subTasks?.filter((taskUuid) => taskUuid !== uuid),
             uuid,
             newIndex
           )
@@ -233,7 +238,7 @@ export const useTasks = (): [TaskList, TaskActions, TaskArray] => {
       const newIndex = currentIndex + indexChange
 
       const newTasks = addAtIndex(
-        taskList?.tasks?.filter?.((taskUuid) => taskUuid !== uuid),
+        taskList?.tasks?.filter((taskUuid) => taskUuid !== uuid),
         uuid,
         newIndex
       )
@@ -245,16 +250,47 @@ export const useTasks = (): [TaskList, TaskActions, TaskArray] => {
     }
   }
 
+  function uploadJSON(json?: string | ArrayBuffer | null) {
+    if (json) {
+      const decoder = new TextDecoder()
+      const jsonString = typeof json === "string" ? json : decoder.decode(json)
+      const parsed = JSON.parse(jsonString)
+      const tasks = Object.values(parsed)
+      tasks?.forEach((task) => _createTask(task as Task))
+    }
+  }
+
+  function downloadJSON() {
+    // create file in browser
+    const fileName = "my-file"
+    const json = JSON.stringify(allTasks, null, 2)
+    const blob = new Blob([json], { type: "application/json" })
+    const href = URL.createObjectURL(blob)
+
+    // create "a" HTLM element with href to file
+    const link = document.createElement("a")
+    link.href = href
+    link.download = fileName + ".json"
+    document.body.appendChild(link)
+    link.click()
+
+    // clean up "a" element & remove ObjectURL
+    document.body.removeChild(link)
+    URL.revokeObjectURL(href)
+  }
+
   return [
     taskList,
     {
       completeTask,
       createTask,
+      downloadJSON,
       getTaskCompletedAt,
       isTaskCompleted,
       removeTask,
       reorderTask,
       updateTask,
+      uploadJSON,
     },
     allTasks,
   ]

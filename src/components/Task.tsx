@@ -20,6 +20,7 @@ interface TaskProps extends TaskActions {
   setEditing(uuid?: string): void
   editing?: string
   parenting?: string
+  hideCompleted?: boolean
 }
 
 function TaskComponent({
@@ -29,6 +30,7 @@ function TaskComponent({
   setEditing,
   editing,
   parenting,
+  hideCompleted,
   ...tasksFunctions
 }: TaskProps) {
   const {
@@ -45,6 +47,9 @@ function TaskComponent({
   const isParent = parenting === uuid
   const hasSubTasks = !!subTasks?.length
 
+  const isCompleted = isTaskCompleted(uuid)
+
+  if (hideCompleted && isCompleted) return null
   return (
     <div className="flex-1">
       <div className="flex gap-2 items-center">
@@ -73,13 +78,9 @@ function TaskComponent({
           ]
             .filter(Boolean)
             .join(" ")}
-          onClick={() =>
-            !hasSubTasks && completeTask(uuid, !isTaskCompleted(uuid))
-          }
+          onClick={() => !hasSubTasks && completeTask(uuid, !isCompleted)}
         >
-          {isTaskCompleted(uuid) && (
-            <CheckIcon className="w-4 h-4 absolute inset-0" />
-          )}
+          {isCompleted && <CheckIcon className="w-4 h-4 absolute inset-0" />}
         </button>
 
         <div className="flex-1 flex gap-2 items-center font-normal">
@@ -153,7 +154,7 @@ function TaskComponent({
       </div>
       {expand && hasSubTasks && (
         <div className="flex flex-col gap-2 pl-5 pt-2">
-          {subTasks?.map?.((uuid) => (
+          {subTasks?.map((uuid) => (
             <TaskComponent
               key={uuid}
               uuid={uuid}
@@ -162,6 +163,7 @@ function TaskComponent({
               setEditing={setEditing}
               parenting={parenting}
               editing={editing}
+              hideCompleted={hideCompleted}
               {...tasksFunctions}
             />
           ))}
